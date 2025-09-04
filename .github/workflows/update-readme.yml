@@ -20,10 +20,12 @@ jobs:
           
       - name: Update README.md
         run: |
-          # README.md
+          # Use a marker to define where the content should be placed
           MARKER_START=""
           MARKER_END=""
-          sed -i "s|.*|\n- \`\`\`${{ steps.get_commit_message.outputs.message }}\`\`\`\n|g" README.md
+          
+          # Use sed to replace the content between the markers
+          sed -i "/$MARKER_START/,/$MARKER_END/c\\$MARKER_START\n- \`${{ env.COMMIT_MESSAGE }}\`\n$MARKER_END" README.md
         
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
