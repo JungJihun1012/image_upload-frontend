@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+    workflows_dispatch:
     
 jobs:
   update-readme:
@@ -19,13 +20,13 @@ jobs:
           
       - name: Update README.md
         run: |
-          # README.md 파일에 변경 이력 섹션이 있다고 가정
+          # README.md
+          MARKER_START=""
+          MARKER_END=""
           sed -i "s|.*|\n- \`\`\`${{ steps.get_commit_message.outputs.message }}\`\`\`\n|g" README.md
         
-      - name: Commit changes
-        run: |
-          git config user.email "jihunjeong965@gmail.com"
-          git config user.name "JungJihun1012"
-          git add README.md
-          git commit -m "Docs: Update README with latest commit" || echo "No changes to commit"
-          git push
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Docs: Update README with latest commit"
+          file_pattern: "README.md"
