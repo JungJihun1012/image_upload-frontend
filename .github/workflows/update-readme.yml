@@ -4,20 +4,19 @@ on:
   push:
     branches:
       - main
-    workflows_dispatch:
-    
+  workflow_dispatch: # This is the correct syntax
+
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-        
+        uses: actions/checkout@v3 # Use the latest version
+
       - name: Get latest commit message
-        id: get_commit_message
         run: |
-          echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
-          
+          echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)" >> "$GITHUB_ENV"
+
       - name: Update README.md
         run: |
           # Define the marker lines
@@ -25,9 +24,6 @@ jobs:
           MARKER_END=""
           
           # Use sed to replace the content between the markers with the new content
-          # The -e option allows for multiple commands
-          # The first command deletes the old content between the markers
-          # The second command inserts the new content after the start marker
           sed -i -e "/$MARKER_START/,/$MARKER_END/d" -e "/$MARKER_START/a\\- \`${{ env.COMMIT_MESSAGE }}\`" README.md
         
       - name: Commit and Push changes
