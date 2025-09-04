@@ -76,6 +76,8 @@ const App: React.FC = () => {
       setProgress(0);
       setUploadStatus("업로드 실패");
       console.error('이미지 업로드 에러:', err);
+      // console.log();
+      
     }
   };
 
