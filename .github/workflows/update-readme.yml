@@ -19,8 +19,8 @@ jobs:
 
       - name: Update README.md
         run: |
-          MARKER_START="<!-- COMMIT_MESSAGE_START -->"
-          MARKER_END="<!-- COMMIT_MESSAGE_END -->"
+          MARKER_START=""
+          MARKER_END=""
           
           sed -i -e "/$MARKER_START/,/$MARKER_END/d" -e "/$MARKER_START/a\\- \`${{ env.COMMIT_MESSAGE }}\`" README.md
         
