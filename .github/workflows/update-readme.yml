@@ -4,14 +4,14 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # This is the correct syntaxs
+  workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3 # Use the latest version
+        uses: actions/checkout@v3
 
       - name: Get latest commit message
         run: |
@@ -19,11 +19,9 @@ jobs:
 
       - name: Update README.md
         run: |
-          # Define the marker lines
-          MARKER_START=""
-          MARKER_END=""
+          MARKER_START="<!-- COMMIT_MESSAGE_START -->"
+          MARKER_END="<!-- COMMIT_MESSAGE_END -->"
           
-          # Use sed to replace the content between the markers with the new content
           sed -i -e "/$MARKER_START/,/$MARKER_END/d" -e "/$MARKER_START/a\\- \`${{ env.COMMIT_MESSAGE }}\`" README.md
         
       - name: Commit and Push changes
