@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # This is the correct syntax
+  workflow_dispatch: # This is the correct syntaxs
 
 jobs:
   update-readme:
