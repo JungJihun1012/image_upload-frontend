@@ -1,127 +1,171 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import axios from 'axios';
+import styled from 'styled-components';
 
 const App: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadState, setUploadState] = useState<string>('');
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [progress, setProgress] = useState<number>(0);
   const imgRef = useRef<HTMLImageElement>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setUploadProgress(0);
-      setUploadState('');
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current);
-      }
-
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setProgress(0);
+      setUploadStatus('');
+      
       const reader = new FileReader();
       reader.onload = () => {
         if (imgRef.current) {
           imgRef.current.src = reader.result as string;
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
+    }
+  }, []);
+
+  const clearProgressInterval = () => {
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current);
+      progressInterval.current = null;
     }
   };
 
-  const startFakeProgress = () => {
+  const simulateProgress = useCallback(() => {
     return new Promise<void>((resolve) => {
-      setUploadProgress(0);
-      let progress = 0;
+      setProgress(0);
+      let currentProgress = 0;
       progressInterval.current = setInterval(() => {
-        progress += 1;
-        setUploadProgress(progress);
-        if (progress >= 100) {
-          clearInterval(progressInterval.current!);
-          progressInterval.current = null;
+        currentProgress += 1;
+        setProgress(currentProgress);
+        if (currentProgress >= 100) {
+          clearProgressInterval();
           resolve();
         }
       }, 30);
     });
-  };
+  }, []);
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadState('이미지를 선택해주세요.');
+    if (!file) {
+      setUploadStatus('이미지를 선택해주세요.');
       return;
     }
 
     const formData = new FormData();
-    formData.append('image', selectedFile);
+    formData.append('image', file);
 
     try {
-      setUploadState('업로드 중...');
-      
-      await startFakeProgress(); 
+      setUploadStatus('업로드 중...');
+      await simulateProgress();
 
-      setUploadState('파일 전송 중...');
-      const res = await axios.post('http://localhost:8000/api/upload-image', formData, {
+      setUploadStatus('파일 전송 중...');
+      await axios.post('http://localhost:8000/api/upload-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
         withCredentials: true
       });
       
-      setUploadState('업로드가 완료되었습니다.');
-      console.log(res.data);
+      setUploadStatus('업로드가 완료되었습니다.');
       
     } catch (err) {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current);
-      }
-      setUploadProgress(0);
-      setUploadState("업로드 실패");
+      clearProgressInterval();
+      setProgress(0);
+      setUploadStatus("업로드 실패");
       console.error('이미지 업로드 에러:', err);
     }
   };
 
+  const isUploading = progress > 0 && progress < 100;
+  const isComplete = progress === 100;
+
   return (
-    <>
-      <div style={{ display: "flex", alignItems: "center", flexDirection: "column" }}>
-        <img
-          ref={imgRef}
-          alt="Profile Preview"
-          style={{
-            width: '100px',
-            height: '100px',
-            borderRadius: '50%',
-            border: '1px solid black',
-            objectFit: 'cover'
-          }}
+    <Container>
+      <StyledImg ref={imgRef} alt="Profile Preview" />
+      <ProfileImg>
+        <label htmlFor="profileImg">프로필 이미지 추가</label>
+        <input 
+          type="file" 
+          accept="image/*" 
+          id="profileImg" 
+          onChange={handleFileChange} 
+          style={{ display: "none" }} 
         />
-        <div style={{ margin: "10px 0 10px 0", color: "blueviolet" }}>
-          <label htmlFor="profileImg">프로필 이미지 추가</label>
-          <input type="file" accept="image/*" id="profileImg" onChange={handleFile} style={{ display: "none" }} />
-        </div>
-        <button onClick={handleUpload} disabled={!selectedFile}>
-          이미지 업로드
-        </button>
-        {uploadProgress > 0 && uploadProgress <= 100 && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ width: '200px', height: '10px', backgroundColor: '#e0e0e0', borderRadius: '5px', marginTop: '10px' }}>
-              <div
-                style={{
-                  width: `${uploadProgress}%`,
-                  height: '100%',
-                  backgroundColor: 'green',
-                  borderRadius: '5px',
-                  transition: 'width 0.3s ease-in-out',
-                }}
-              />
-            </div>
-            <p style={{ marginTop: '5px', fontSize: '14px', color: '#555' }}>
-              업로드 중: {uploadProgress}%
-            </p>
-          </div>
-        )}
-        <p>{uploadState}</p>
-      </div>
-    </>
+      </ProfileImg>
+      <Button onClick={handleUpload} disabled={!file || isUploading}>
+        이미지 업로드
+      </Button>
+      {isUploading && (
+        <UploadContent>
+          <LoadingBar>
+            <Loading style={{ width: `${progress}%` }} />
+          </LoadingBar>
+          <UploadingText>
+            업로드 중: {progress}%
+          </UploadingText>
+        </UploadContent>
+      )}
+      <p>{uploadStatus}</p>
+    </Container>
   );
 };
+
+const Container = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const StyledImg = styled.img`
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 1px solid black;
+  object-fit: cover;
+`;
+
+const ProfileImg = styled.div`
+  margin: 10px 0;
+  color: blueviolet;
+`;
+
+const Button = styled.button`
+  /* 기존 스타일 유지 */
+  cursor: pointer;
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const UploadContent = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const LoadingBar = styled.div`
+  width: 200px;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  margin-top: 10px;
+`;
+
+const Loading = styled.div`
+  height: 100%;
+  background-color: green;
+  border-radius: 5px;
+  transition: width 0.3s ease-in-out;
+`;
+
+const UploadingText = styled.p`
+  margin-top: 5px;
+  font-size: 14px;
+  color: #555;
+`;
 
 export default App;
