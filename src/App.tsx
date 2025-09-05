@@ -86,9 +86,9 @@ const App: React.FC = () => {
 
   return (
     <Container>
-      <StyledImg ref={imgRef} alt="Profile Preview" />
+      <StyledImg ref={imgRef} />
       <ProfileImg>
-        <label htmlFor="profileImg">프로필 이미지 추가</label>
+        <label htmlFor="profileImg" style={{cursor: "pointer"}}>프로필 이미지 추가</label>
         <input 
           type="file" 
           accept="image/*" 
@@ -119,9 +119,14 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
+  border: 1px solid black;
+  width: 20%;
+  height: 50rem;
+  margin: auto;
 `;
 
 const StyledImg = styled.img`
+  margin-top: 2rem;
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -135,8 +140,32 @@ const ProfileImg = styled.div`
 `;
 
 const Button = styled.button`
-  /* 기존 스타일 유지 */
+  position: relative;
+  overflow: hidden;
+  padding: 5px 12px;
+  background-color: transparent;
+  border: 1px solid black;
+  border-radius: 6px;
   cursor: pointer;
+  z-index: 1;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background-color: lightgrey;
+    transition: all 0.5s ease;
+    z-index: -1;
+  }
+  
+  &:hover::after {
+    left: 0;
+    color: #fff;
+  }
+
   &:disabled {
     cursor: not-allowed;
     opacity: 0.5;
